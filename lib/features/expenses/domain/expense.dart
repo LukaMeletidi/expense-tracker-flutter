@@ -18,7 +18,7 @@ class Expense {
 
   /// The calendar day the money was spent, as local midnight
   /// (e.g. `DateTime(2026, 9, 1)`). The time part carries no meaning.
-  /// Use `dateOnly` to clean a value before saving it.
+  /// Every value is cleaned with `dateOnly` when it is saved.
   final DateTime date;
 
   /// The moment this expense was saved, set by the repository.

@@ -35,6 +35,16 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # State management: holds app state outside widgets, so UI stays logic-free.
+  flutter_riverpod: ^3.4.3
+  # Local database: type-safe SQLite, with queries that emit a Stream and
+  # re-fire automatically whenever the underlying table changes.
+  drift: ^2.35.0
+  # Opens the actual database file on Android/iOS (native SQLite + app paths).
+  drift_flutter: ^0.3.1
+  # Declarative, URL-style navigation between screens.
+  go_router: ^18.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -45,6 +55,11 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+
+  # Reads the Drift table definitions and generates the typed database code.
+  drift_dev: ^2.35.0
+  # The tool that runs that generation: dart run build_runner build
+  build_runner: ^2.15.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -1,0 +1,48 @@
+# Checks every push to main and every pull request: formatting, static
+# analysis and all tests. A red result means something needs fixing before
+# the change is trusted.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only: this workflow never changes the repository and needs no secrets.
+permissions:
+  contents: read
+
+# If a newer push arrives while an older run is still going, cancel the older
+# one; only the latest code matters.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pinned to the same Flutter version used locally, so CI only changes
+      # when we choose to upgrade. The action is third-party, so it is pinned
+      # to an exact release tag.
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: 3.44.8
+          channel: stable
+          cache: true
+
+      - name: Install packages
+        run: flutter pub get
+
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test

@@ -1,5 +1,7 @@
 # Expense Tracker
 
+[![CI](https://github.com/LukaMeletidi/expense-tracker-flutter/actions/workflows/ci.yml/badge.svg)](https://github.com/LukaMeletidi/expense-tracker-flutter/actions/workflows/ci.yml)
+
 An offline-first expense tracker for Android and iOS, built with Flutter,
 Riverpod and Drift. Every expense is stored on the device, so the app works
 without an internet connection.
@@ -111,6 +113,9 @@ flutter analyze
 flutter test
 ```
 
+GitHub Actions runs the same checks, plus a formatting check, on every push
+to `main` and every pull request (see `.github/workflows/ci.yml`).
+
 The Drift code generated from the table definitions
 (`lib/core/database/app_database.g.dart`) is committed, so the app runs
 straight after cloning. After changing a table, regenerate it with:
@@ -124,7 +129,6 @@ dart run build_runner build
 - Edit an existing expense
 - Show totals, for example for the current month
 - Group the list by day
-- Run analyze and tests automatically on every push (GitHub Actions)
 
 ## How it was built
 

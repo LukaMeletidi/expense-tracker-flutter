@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:expense_tracker/features/expenses/domain/calendar_month.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
 import 'package:expense_tracker/features/expenses/domain/expense_repository.dart';
 
@@ -21,10 +22,10 @@ class FakeExpenseRepository implements ExpenseRepository {
   /// The expenses currently stored, for tests to inspect.
   List<Expense> get expenses => List.unmodifiable(_expenses);
 
-  /// When true, watchAll never emits, so the list stays loading.
+  /// When true, watchAll and watchMonth never emit, so the list stays loading.
   bool neverEmits = false;
 
-  /// When set, watchAll fails with this error.
+  /// When set, watchAll and watchMonth fail with this error.
   Object? watchError;
 
   /// When set, delete fails with this error.
@@ -44,10 +45,19 @@ class FakeExpenseRepository implements ExpenseRepository {
   int addCalls = 0;
 
   @override
-  Stream<List<Expense>> watchAll() {
+  Stream<List<Expense>> watchAll() => _watch((_) => true);
+
+  @override
+  Stream<List<Expense>> watchMonth(CalendarMonth month) =>
+      _watch((expense) => CalendarMonth.of(expense.date) == month);
+
+  /// The stored expenses that pass [include], then again after every change.
+  Stream<List<Expense>> _watch(bool Function(Expense expense) include) {
     if (neverEmits) return StreamController<List<Expense>>().stream;
     if (watchError != null) return Stream.error(watchError!);
-    return _currentThenChanges();
+    return _currentThenChanges().map(
+      (all) => List.unmodifiable(all.where(include)),
+    );
   }
 
   Stream<List<Expense>> _currentThenChanges() async* {

@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:expense_tracker/core/database/app_database.dart';
 import 'package:expense_tracker/core/database/database_provider.dart';
 import 'package:expense_tracker/features/expenses/data/expense_repository_provider.dart';
+import 'package:expense_tracker/features/expenses/domain/calendar_month.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
 import 'package:expense_tracker/features/expenses/domain/expense_repository.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/expense_list_provider.dart';
@@ -50,6 +51,10 @@ Future<List<Expense>> waitForList(
 class FailingExpenseRepository implements ExpenseRepository {
   @override
   Stream<List<Expense>> watchAll() => Stream.error(Exception('disk full'));
+
+  @override
+  Stream<List<Expense>> watchMonth(CalendarMonth month) =>
+      Stream.error(Exception('disk full'));
 
   @override
   Future<void> add({

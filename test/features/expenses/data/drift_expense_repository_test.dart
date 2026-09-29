@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:expense_tracker/core/database/app_database.dart';
 import 'package:expense_tracker/features/expenses/data/drift_expense_repository.dart';
+import 'package:expense_tracker/features/expenses/domain/calendar_month.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -150,5 +151,68 @@ void main() {
     expect(lists.current.single.title, 'Coffee');
 
     await lists.cancel();
+  });
+
+  group('watchMonth', () {
+    /// Adds one expense per date, each titled with its date.
+    Future<void> addOnDates(List<DateTime> dates) async {
+      for (final date in dates) {
+        await repo.add(
+          title: '${date.year}-${date.month}-${date.day}',
+          amountCents: 100,
+          category: ExpenseCategory.other,
+          date: date,
+        );
+      }
+    }
+
+    Future<List<String>> monthTitles(CalendarMonth month) async {
+      final expenses = await repo.watchMonth(month).first;
+      return expenses.map((e) => e.title).toList();
+    }
+
+    test('returns only that month, including its first and last day', () async {
+      await addOnDates([
+        DateTime(2026, 8, 31),
+        DateTime(2026, 9, 1),
+        DateTime(2026, 9, 30),
+        DateTime(2026, 10, 1),
+      ]);
+
+      // Newest first, like watchAll.
+      expect(await monthTitles(const CalendarMonth(2026, 9)), [
+        '2026-9-30',
+        '2026-9-1',
+      ]);
+    });
+
+    test('December does not reach into January of the next year', () async {
+      await addOnDates([DateTime(2026, 12, 31), DateTime(2027, 1, 1)]);
+
+      expect(await monthTitles(const CalendarMonth(2026, 12)), ['2026-12-31']);
+      expect(await monthTitles(const CalendarMonth(2027, 1)), ['2027-1-1']);
+    });
+
+    test('a month without expenses is empty', () async {
+      await addOnDates([DateTime(2026, 9, 1)]);
+
+      expect(await monthTitles(const CalendarMonth(2026, 8)), isEmpty);
+    });
+
+    test('emits again after an add in that month', () async {
+      final lists = StreamIterator(
+        repo.watchMonth(const CalendarMonth(2026, 9)),
+      );
+
+      expect(await lists.moveNext(), isTrue);
+      expect(lists.current, isEmpty);
+
+      await addOnDates([DateTime(2026, 9, 15)]);
+
+      expect(await lists.moveNext(), isTrue);
+      expect(lists.current.single.title, '2026-9-15');
+
+      await lists.cancel();
+    });
   });
 }

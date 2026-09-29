@@ -98,7 +98,11 @@ void main() {
       date: DateTime(2026, 9, 1),
     );
 
-    expect(await titles(), ['Newer day', 'Older day, saved later', 'Older day']);
+    expect(await titles(), [
+      'Newer day',
+      'Older day, saved later',
+      'Older day',
+    ]);
   });
 
   test('delete removes only the given expense', () async {

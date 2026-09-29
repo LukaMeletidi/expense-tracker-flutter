@@ -13,9 +13,7 @@ class AddExpenseScreen extends StatelessWidget {
       // go_router gives this screen a back button automatically, because it
       // was pushed onto the stack by the list screen.
       appBar: AppBar(title: const Text('Add expense')),
-      body: const Center(
-        child: Text('The expense form goes here (step 5).'),
-      ),
+      body: const Center(child: Text('The expense form goes here (step 5).')),
     );
   }
 }

@@ -10,10 +10,16 @@ import 'package:expense_tracker/features/expenses/domain/expense_repository.dart
 /// test can choose which state the list is in.
 class FakeExpenseRepository implements ExpenseRepository {
   FakeExpenseRepository({List<Expense> expenses = const []})
-    : _expenses = [...expenses];
+    : _expenses = [...expenses],
+      _nextId =
+          expenses.fold(0, (highest, e) => e.id > highest ? e.id : highest) + 1;
 
   final List<Expense> _expenses;
   final _changes = StreamController<List<Expense>>.broadcast();
+  int _nextId;
+
+  /// The expenses currently stored, for tests to inspect.
+  List<Expense> get expenses => List.unmodifiable(_expenses);
 
   /// When true, watchAll never emits, so the list stays loading.
   bool neverEmits = false;
@@ -26,6 +32,16 @@ class FakeExpenseRepository implements ExpenseRepository {
 
   /// The ids passed to delete, in order.
   final List<int> deletedIds = [];
+
+  /// When set, add fails with this error.
+  Object? addError;
+
+  /// When set, add waits for this to complete, so a test can look at the
+  /// screen while a save is still in progress.
+  Completer<void>? addGate;
+
+  /// How many times add was called, including failed calls.
+  int addCalls = 0;
 
   @override
   Stream<List<Expense>> watchAll() {
@@ -54,5 +70,22 @@ class FakeExpenseRepository implements ExpenseRepository {
     required ExpenseCategory category,
     required DateTime date,
     String? note,
-  }) => throw UnimplementedError('Not needed until the add form (step 5c).');
+  }) async {
+    addCalls++;
+    await addGate?.future;
+    if (addError != null) throw addError!;
+    _expenses.add(
+      Expense(
+        id: _nextId++,
+        title: title,
+        amountCents: amountCents,
+        category: category,
+        date: date,
+        // The fake has no clock; tests do not check createdAt.
+        createdAt: DateTime(2026, 1, 1),
+        note: note,
+      ),
+    );
+    _changes.add(List.unmodifiable(_expenses));
+  }
 }

@@ -68,17 +68,3 @@ class Expense {
   int get hashCode =>
       Object.hash(id, title, amountCents, category, date, createdAt, note);
 }
-
-abstract class ExpenseRepository {
-  Stream<List<Expense>> watchAll();
-
-  Future<void> add({
-    required String title,
-    required int amountCents,
-    required ExpenseCategory category,
-    required DateTime date,
-    String? note,
-  });
-
-  Future<void> delete(int id);
-}

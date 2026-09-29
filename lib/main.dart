@@ -1,4 +1,5 @@
 import 'package:expense_tracker/core/router/app_router.dart';
+import 'package:expense_tracker/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,9 +24,10 @@ class ExpenseTrackerApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'Expense Tracker',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-      ),
+      theme: buildAppTheme(Brightness.light),
+      darkTheme: buildAppTheme(Brightness.dark),
+      // Follow the phone's light/dark setting, and switch live when it changes.
+      themeMode: ThemeMode.system,
       routerConfig: router ?? appRouter,
     );
   }

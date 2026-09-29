@@ -20,6 +20,7 @@ without an internet connection.
 - Data is saved in a local SQLite database and survives app restarts
 - Form validation (required title, amount must be a valid number above 0)
 - Every screen handles its loading, error and empty states
+- Light and dark themes that follow the phone's setting
 
 ## Tech stack
 
@@ -79,15 +80,15 @@ flowchart LR
 
 ## Testing
 
-92 tests, grouped by layer:
+97 tests, grouped by layer:
 
 | Layer | Tests | How |
 |---|---|---|
 | Domain and formatting | 48 | Plain unit tests (entity equality, `copyWith`, `dateOnly`, money parsing and formatting) |
 | Data | 13 | The real Drift repository against an in-memory SQLite database |
 | Providers | 4 | A Riverpod `ProviderContainer` with the in-memory database |
-| Form rules and labels | 12 | Plain unit tests |
-| Widgets | 15 | Screens and navigation, with a fake repository |
+| Form rules, labels and theme | 15 | Plain unit tests |
+| Widgets | 17 | Screens, navigation and light/dark theme, with a fake repository |
 
 Widget tests use a fake repository rather than SQLite: they run on a fake
 clock, where Drift's stream timers can cause "Timer still pending" failures.

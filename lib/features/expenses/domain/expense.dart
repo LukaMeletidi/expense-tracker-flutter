@@ -29,6 +29,10 @@ class Expense {
     String? note,
     bool clearNote = false,
   }) {
+    assert(
+      !(clearNote && note != null),
+      'Pass either note or clearNote: true, not both.',
+    );
     return Expense(
       id: id ?? this.id,
       title: title ?? this.title,

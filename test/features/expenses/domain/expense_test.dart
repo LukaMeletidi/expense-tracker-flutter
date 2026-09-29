@@ -94,5 +94,12 @@ void main() {
     test('passing note: null keeps the old note', () {
       expect(base.copyWith(note: null).note, 'Morning coffee');
     });
+
+    test('passing note together with clearNote is an error', () {
+      expect(
+        () => base.copyWith(note: 'x', clearNote: true),
+        throwsAssertionError,
+      );
+    });
   });
 }

@@ -15,7 +15,14 @@ class Expense {
   final String title;
   final int amountCents;
   final ExpenseCategory category;
+
+  /// The calendar day the money was spent, as local midnight
+  /// (e.g. `DateTime(2026, 9, 1)`). The time part carries no meaning.
+  /// Use `dateOnly` to clean a value before saving it.
   final DateTime date;
+
+  /// The moment this expense was saved, set by the repository.
+  /// Used to order expenses that share the same [date].
   final DateTime createdAt;
   final String? note;
 

@@ -29,8 +29,8 @@ const int kCentsPerUnit = 100;
 /// formatCents(-250);    // '-₾2.50'
 /// ```
 ///
-/// The optional parameters exist so tests (and any future per-account
-/// currency) can override the defaults without editing this file.
+/// The optional parameters exist so tests can override the defaults without
+/// editing this file.
 String formatCents(
   int cents, {
   String symbol = kCurrencySymbol,

@@ -3,8 +3,14 @@
 Portfolio project: an offline-first expense tracker.
 The developer is a junior who is learning, so explanations matter as much as code.
 
+## Scope
+- Single currency (GEL, ₾) only, set in lib/core/formatting/money.dart.
+  No multi-currency support and no exchange-rate API: the app makes no
+  network calls, which keeps it fully offline. API integration is shown in
+  a separate portfolio app instead.
+
 ## Stack
-Flutter, Riverpod (Notifier/AsyncNotifier), go_router, Drift, dio
+Flutter, Riverpod (Notifier/AsyncNotifier), go_router, Drift
 
 ## Architecture
 - Feature-based structure: lib/features/<feature>/{data,domain,presentation}

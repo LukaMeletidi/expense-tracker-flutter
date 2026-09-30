@@ -1,9 +1,5 @@
 import 'dart:async';
 
-import 'package:drift/native.dart';
-import 'package:expense_tracker/core/clock/clock_provider.dart';
-import 'package:expense_tracker/core/database/app_database.dart';
-import 'package:expense_tracker/core/database/database_provider.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
 import 'package:expense_tracker/features/expenses/domain/month_summary.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/expense_list_provider.dart';
@@ -12,20 +8,7 @@ import 'package:expense_tracker/features/expenses/presentation/providers/selecte
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Real providers on an in-memory database, with "now" pinned to
-/// 29 September 2026.
-ProviderContainer createContainer() {
-  return ProviderContainer.test(
-    overrides: [
-      appDatabaseProvider.overrideWith((ref) {
-        final db = AppDatabase(NativeDatabase.memory());
-        ref.onDispose(db.close);
-        return db;
-      }),
-      clockProvider.overrideWithValue(() => DateTime(2026, 9, 29, 12, 0)),
-    ],
-  );
-}
+import '../../../../helpers/in_memory_container.dart';
 
 /// Waits until the summary passes [condition]. The database answers a
 /// moment after each change, so reading straight away could be too early.
@@ -63,7 +46,7 @@ Future<void> addExpense(
 
 void main() {
   test('an empty month gives an empty summary', () async {
-    final container = createContainer();
+    final container = createInMemoryContainer();
 
     final summary = await waitForSummary(container, (_) => true);
 
@@ -72,7 +55,7 @@ void main() {
   });
 
   test("sums up the selected month's expenses", () async {
-    final container = createContainer();
+    final container = createInMemoryContainer();
     await addExpense(
       container,
       ExpenseCategory.transport,
@@ -95,7 +78,7 @@ void main() {
   });
 
   test('follows a change of the selected month', () async {
-    final container = createContainer();
+    final container = createInMemoryContainer();
     // August first: adding switches to the new expense's month, so the
     // September expense, added last, leaves September selected.
     await addExpense(

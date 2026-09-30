@@ -1,9 +1,5 @@
 import 'dart:async';
 
-import 'package:drift/native.dart';
-import 'package:expense_tracker/core/clock/clock_provider.dart';
-import 'package:expense_tracker/core/database/app_database.dart';
-import 'package:expense_tracker/core/database/database_provider.dart';
 import 'package:expense_tracker/features/expenses/data/expense_repository_provider.dart';
 import 'package:expense_tracker/features/expenses/domain/calendar_month.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
@@ -13,26 +9,7 @@ import 'package:expense_tracker/features/expenses/presentation/providers/selecte
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// "Now" for these tests, so the list shows September 2026 whatever the real
-/// date is.
-final testNow = DateTime(2026, 9, 29, 12, 0);
-
-/// A container whose database lives in memory. Only the database and the
-/// clock are replaced, so the real repository and list providers are under
-/// test. ProviderContainer.test disposes the container (and so closes the
-/// database) when the test ends.
-ProviderContainer createContainer() {
-  return ProviderContainer.test(
-    overrides: [
-      appDatabaseProvider.overrideWith((ref) {
-        final db = AppDatabase(NativeDatabase.memory());
-        ref.onDispose(db.close);
-        return db;
-      }),
-      clockProvider.overrideWithValue(() => testNow),
-    ],
-  );
-}
+import '../../../../helpers/in_memory_container.dart';
 
 /// Waits until expenseListProvider holds a list that passes [condition].
 ///
@@ -78,14 +55,14 @@ class FailingExpenseRepository implements ExpenseRepository {
 
 void main() {
   test('starts loading, then holds an empty list', () async {
-    final container = createContainer();
+    final container = createInMemoryContainer();
 
     expect(container.read(expenseListProvider).isLoading, isTrue);
     expect(await waitForList(container, (_) => true), isEmpty);
   });
 
   test('add makes the expense appear with every field', () async {
-    final container = createContainer();
+    final container = createInMemoryContainer();
 
     await container
         .read(expenseListProvider.notifier)
@@ -108,7 +85,7 @@ void main() {
   });
 
   test('delete makes the expense disappear', () async {
-    final container = createContainer();
+    final container = createInMemoryContainer();
     final notifier = container.read(expenseListProvider.notifier);
 
     await notifier.add(
@@ -125,7 +102,7 @@ void main() {
   });
 
   test('shows only the selected month, and follows a month change', () async {
-    final container = createContainer();
+    final container = createInMemoryContainer();
     final notifier = container.read(expenseListProvider.notifier);
     // August first: adding switches to the new expense's month, so the
     // September expense, added last, leaves September selected.
@@ -158,7 +135,7 @@ void main() {
   });
 
   test('adding an expense in another month switches to that month', () async {
-    final container = createContainer();
+    final container = createInMemoryContainer();
     // Listen, so the list provider stays active the way it does on screen.
     container.listen(expenseListProvider, (_, _) {});
     expect(container.read(selectedMonthProvider), const CalendarMonth(2026, 9));

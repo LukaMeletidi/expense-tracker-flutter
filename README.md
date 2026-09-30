@@ -7,10 +7,13 @@ Riverpod and Drift. Every expense is stored on the device, so the app works
 without an internet connection.
 
 <p>
-  <img src="docs/screenshots/list.png" alt="Expense list" width="250">
-  <img src="docs/screenshots/add_form.png" alt="Add expense form" width="250">
-  <img src="docs/screenshots/empty_state.png" alt="Empty state" width="250">
+  <img src="docs/screenshots/list.png" alt="Expense list in dark mode, with the month bar and the month's total" width="250">
+  <img src="docs/screenshots/add_form.png" alt="Add expense form in light mode" width="250">
+  <img src="docs/screenshots/empty_state.png" alt="Empty month (July 2026) in dark mode, with the month bar and a hint to tap +" width="250">
 </p>
+
+The expense list and an empty month in the dark theme, next to the add form in
+the light theme: the app follows the phone's setting.
 
 ## Features
 
@@ -24,6 +27,10 @@ without an internet connection.
 - Form validation (required title, amount must be a valid number above 0)
 - Every screen handles its loading, error and empty states
 - Light and dark themes that follow the phone's setting
+
+The Statistics screen, opened from the chart icon on the list:
+
+<img src="docs/screenshots/statistics.png" alt="Statistics screen in dark mode: the month's total, then each category's share as a percentage and a bar" width="250">
 
 ## Tech stack
 

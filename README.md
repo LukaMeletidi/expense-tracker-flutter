@@ -15,7 +15,10 @@ without an internet connection.
 ## Features
 
 - Add an expense with a title, amount, category, date and an optional note
-- Browse expenses one month at a time, newest day first
+- Browse expenses one month at a time, newest day first, with the month's
+  total above the list
+- Statistics for each month: the total spent, and each category's share
+  shown as a percentage and a bar
 - Swipe an expense away to delete it
 - Data is saved in a local SQLite database and survives app restarts
 - Form validation (required title, amount must be a valid number above 0)
@@ -28,7 +31,7 @@ without an internet connection.
 |---|---|
 | [Flutter](https://flutter.dev) | UI for Android and iOS from one codebase |
 | [Riverpod](https://riverpod.dev) | State management; keeps logic out of widgets and makes it easy to swap dependencies in tests |
-| [go_router](https://pub.dev/packages/go_router) | Navigation by path (`/`, `/add`) instead of pushing widgets by hand |
+| [go_router](https://pub.dev/packages/go_router) | Navigation by path (`/`, `/add`, `/stats`) instead of pushing widgets by hand |
 | [Drift](https://drift.simonbinder.eu) | Type-safe SQLite; queries return a `Stream` that emits again whenever the table changes |
 
 ## Architecture
@@ -44,11 +47,12 @@ lib/
 │   ├── router/                 go_router setup
 │   └── theme/                  light and dark themes
 └── features/expenses/
-    ├── domain/                 Expense, CalendarMonth, ExpenseRepository
-    │                           interface, dateOnly
+    ├── domain/                 Expense, CalendarMonth, MonthSummary,
+    │                           ExpenseRepository interface, dateOnly
     │                           (pure Dart: no Flutter, no Drift)
     ├── data/                   Drift table, DriftExpenseRepository
-    └── presentation/           screens, providers, form rules
+    └── presentation/           screens, providers, shared widgets
+                                (month bar), form rules
 ```
 
 How data flows when the list is shown, and after an expense is added:
@@ -78,21 +82,24 @@ flowchart LR
 - **Adding or deleting does not update the list by hand.** Drift's query
   stream sends the new list after every change, so the database is the single
   source of truth.
+- **Statistics are calculated from the month's list, not queried again.**
+  The totals come from the same expenses the list shows, so they always
+  match the rows on screen and update on every add or delete.
 - **Temporary form state stays in the widget; rules do not.** What the user
   is typing lives in the screen's `State`, while validation and parsing are
   plain functions with their own unit tests.
 
 ## Testing
 
-129 tests, grouped by layer:
+154 tests, grouped by layer:
 
 | Layer | Tests | How |
 |---|---|---|
-| Domain and formatting | 63 | Plain unit tests (entity equality, `copyWith`, `dateOnly`, `CalendarMonth`, money parsing and formatting) |
+| Domain and formatting | 70 | Plain unit tests (entity equality, `copyWith`, `dateOnly`, `CalendarMonth`, month summaries, money parsing and formatting) |
 | Data | 17 | The real Drift repository against an in-memory SQLite database |
-| Providers | 13 | A Riverpod `ProviderContainer`, with the in-memory database for the expense list |
-| Form rules, labels and theme | 15 | Plain unit tests |
-| Widgets | 21 | Screens, month navigation, and light/dark theme, with a fake repository |
+| Providers | 16 | A Riverpod `ProviderContainer`, with the in-memory database for the expense list and the month summary |
+| Form rules, labels, percentages and theme | 20 | Plain unit tests |
+| Widgets | 31 | Screens, month navigation, statistics, the total line, and light/dark theme, with a fake repository |
 
 Widget tests use a fake repository rather than SQLite: they run on a fake
 clock, where Drift's stream timers can cause "Timer still pending" failures.
@@ -135,9 +142,7 @@ dart run build_runner build
 
 ## Roadmap
 
-- Edit an existing expense
-- Show totals, for example for the current month
-- Group the list by day
+- Export expenses to a CSV file
 
 ## How it was built
 

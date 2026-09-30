@@ -2,6 +2,7 @@ import 'package:expense_tracker/core/formatting/money.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
 import 'package:expense_tracker/features/expenses/presentation/expense_category_label.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/expense_list_provider.dart';
+import 'package:expense_tracker/features/expenses/presentation/providers/month_summary_provider.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/selected_month_provider.dart';
 import 'package:expense_tracker/features/expenses/presentation/widgets/month_bar.dart';
 import 'package:flutter/material.dart';
@@ -10,8 +11,9 @@ import 'package:go_router/go_router.dart';
 
 /// The app's home screen: the expenses of one month at a time.
 ///
-/// It only reads [expenseListProvider] and [selectedMonthProvider] and calls
-/// their notifiers; all data logic lives in the providers and the repository.
+/// It only reads [expenseListProvider], [selectedMonthProvider] and
+/// [monthSummaryProvider] and calls their notifiers; all data logic lives in
+/// the providers and the repository.
 class ExpenseListScreen extends ConsumerWidget {
   const ExpenseListScreen({super.key});
 
@@ -51,7 +53,12 @@ class ExpenseListScreen extends ConsumerWidget {
               ),
               data: (items) => items.isEmpty
                   ? _EmptyView(monthName: monthName)
-                  : _ExpenseList(expenses: items),
+                  : Column(
+                      children: [
+                        const _MonthTotal(),
+                        Expanded(child: _ExpenseList(expenses: items)),
+                      ],
+                    ),
             ),
           ),
         ],
@@ -62,6 +69,33 @@ class ExpenseListScreen extends ConsumerWidget {
         onPressed: () => context.push('/add'),
         tooltip: 'Add expense',
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+/// "Total   ₾182.60": the selected month's total, above the list.
+class _MonthTotal extends ConsumerWidget {
+  const _MonthTotal();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Built from the same expense list the rows below come from, so the
+    // total always matches the rows on screen.
+    final summary = ref.watch(monthSummaryProvider).value;
+    if (summary == null) return const SizedBox.shrink();
+    final style = Theme.of(context).textTheme.titleSmall;
+
+    return Padding(
+      // 16 on the sides, like the rows, so the total lines up with the
+      // amounts under it.
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      child: Row(
+        children: [
+          Text('Total', style: style),
+          const Spacer(),
+          Text(formatCents(summary.totalCents), style: style),
+        ],
       ),
     );
   }

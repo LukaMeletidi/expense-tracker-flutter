@@ -199,4 +199,66 @@ void main() {
       );
     });
   });
+
+  group('total line', () {
+    testWidgets("shows the month's total above the list", (tester) async {
+      await pumpListScreen(
+        tester,
+        FakeExpenseRepository(expenses: [coffee, bus]),
+      );
+      await tester.pumpAndSettle();
+
+      // ₾4.50 + ₾1.00
+      expect(find.text('Total'), findsOneWidget);
+      expect(find.text('₾5.50'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Total')).dy,
+        lessThan(tester.getTopLeft(find.text('Coffee')).dy),
+      );
+    });
+
+    testWidgets('updates after a delete', (tester) async {
+      await pumpListScreen(
+        tester,
+        FakeExpenseRepository(expenses: [coffee, bus]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.text('Coffee'), const Offset(-600, 0));
+      await tester.pumpAndSettle();
+
+      // Only the bus is left: its row and the total both show ₾1.00.
+      expect(find.text('₾5.50'), findsNothing);
+      expect(find.text('₾1.00'), findsNWidgets(2));
+    });
+
+    testWidgets('follows the selected month', (tester) async {
+      final rent = Expense(
+        id: 3,
+        title: 'Rent',
+        amountCents: 50000,
+        category: ExpenseCategory.bills,
+        date: DateTime(2026, 8, 15),
+        createdAt: DateTime(2026, 8, 15, 9, 0),
+      );
+      await pumpListScreen(
+        tester,
+        FakeExpenseRepository(expenses: [coffee, rent]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Show previous month'));
+      await tester.pumpAndSettle();
+
+      // August has only the rent: its row and the total both show ₾500.00.
+      expect(find.text('₾500.00'), findsNWidgets(2));
+    });
+
+    testWidgets('is not shown for an empty month', (tester) async {
+      await pumpListScreen(tester, FakeExpenseRepository());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Total'), findsNothing);
+    });
+  });
 }

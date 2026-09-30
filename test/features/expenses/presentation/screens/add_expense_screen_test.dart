@@ -100,7 +100,8 @@ void main() {
     // Back on the list, which already shows the new expense.
     expect(find.text('Add expense'), findsNothing);
     expect(find.text('Coffee'), findsOneWidget);
-    expect(find.text('₾4.50'), findsOneWidget);
+    // Twice: in the row, and in the total line (the only expense).
+    expect(find.text('₾4.50'), findsNWidgets(2));
   });
 
   testWidgets('an empty note is saved as null', (tester) async {

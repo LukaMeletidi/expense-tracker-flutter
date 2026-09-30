@@ -3,6 +3,7 @@ import 'package:expense_tracker/features/expenses/domain/expense.dart';
 import 'package:expense_tracker/features/expenses/presentation/expense_category_label.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/expense_list_provider.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/selected_month_provider.dart';
+import 'package:expense_tracker/features/expenses/presentation/widgets/month_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,7 +29,7 @@ class ExpenseListScreen extends ConsumerWidget {
         children: [
           // Outside the states below, so the month can be changed even while
           // loading or after an error.
-          _MonthBar(monthName: monthName),
+          const MonthBar(),
           Expanded(
             // when() makes us handle every state; forgetting one will not
             // compile.
@@ -52,47 +53,6 @@ class ExpenseListScreen extends ConsumerWidget {
         onPressed: () => context.push('/add'),
         tooltip: 'Add expense',
         child: const Icon(Icons.add),
-      ),
-    );
-  }
-}
-
-/// ◀ September 2026 ▶: moves the list one month back or forward.
-class _MonthBar extends ConsumerWidget {
-  const _MonthBar({required this.monthName});
-
-  final String monthName;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Watching the month makes this rebuild on every change, so canGoNext
-    // is read again each time the month moves.
-    ref.watch(selectedMonthProvider);
-    final notifier = ref.read(selectedMonthProvider.notifier);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: notifier.previous,
-            tooltip: 'Show previous month',
-            icon: const Icon(Icons.chevron_left),
-          ),
-          Expanded(
-            child: Text(
-              monthName,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          IconButton(
-            // null disables the button: there is no month after the current one.
-            onPressed: notifier.canGoNext ? notifier.next : null,
-            tooltip: 'Show next month',
-            icon: const Icon(Icons.chevron_right),
-          ),
-        ],
       ),
     );
   }

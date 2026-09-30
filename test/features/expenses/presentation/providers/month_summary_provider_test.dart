@@ -1,7 +1,4 @@
-import 'dart:async';
-
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
-import 'package:expense_tracker/features/expenses/domain/month_summary.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/expense_list_provider.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/month_summary_provider.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/selected_month_provider.dart';
@@ -9,24 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../helpers/in_memory_container.dart';
-
-/// Waits until the summary passes [condition]. The database answers a
-/// moment after each change, so reading straight away could be too early.
-Future<MonthSummary> waitForSummary(
-  ProviderContainer container,
-  bool Function(MonthSummary summary) condition,
-) {
-  final completer = Completer<MonthSummary>();
-  final subscription = container.listen(monthSummaryProvider, (_, next) {
-    final summary = next.value;
-    if (summary != null && condition(summary) && !completer.isCompleted) {
-      completer.complete(summary);
-    }
-  }, fireImmediately: true);
-  return completer.future
-      .timeout(const Duration(seconds: 5))
-      .whenComplete(subscription.close);
-}
+import '../../../../helpers/wait_for.dart';
 
 Future<void> addExpense(
   ProviderContainer container,
@@ -48,7 +28,7 @@ void main() {
   test('an empty month gives an empty summary', () async {
     final container = createInMemoryContainer();
 
-    final summary = await waitForSummary(container, (_) => true);
+    final summary = await waitFor(container, monthSummaryProvider, (_) => true);
 
     expect(summary.isEmpty, isTrue);
     expect(summary.totalCents, 0);
@@ -69,7 +49,11 @@ void main() {
       DateTime(2026, 9, 1),
     );
 
-    final summary = await waitForSummary(container, (s) => s.totalCents == 550);
+    final summary = await waitFor(
+      container,
+      monthSummaryProvider,
+      (s) => s.totalCents == 550,
+    );
 
     expect(summary.categories.map((c) => c.category), [
       ExpenseCategory.food,
@@ -93,12 +77,13 @@ void main() {
       450,
       DateTime(2026, 9, 1),
     );
-    await waitForSummary(container, (s) => s.totalCents == 450);
+    await waitFor(container, monthSummaryProvider, (s) => s.totalCents == 450);
 
     container.read(selectedMonthProvider.notifier).previous();
 
-    final august = await waitForSummary(
+    final august = await waitFor(
       container,
+      monthSummaryProvider,
       (s) => s.totalCents == 50000,
     );
     expect(august.categories.single.category, ExpenseCategory.bills);

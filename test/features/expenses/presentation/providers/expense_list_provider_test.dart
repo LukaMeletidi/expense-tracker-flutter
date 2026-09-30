@@ -10,26 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../helpers/in_memory_container.dart';
-
-/// Waits until expenseListProvider holds a list that passes [condition].
-///
-/// Drift sends the new list a moment after a change, so reading the
-/// provider straight after add or delete could still see the old list.
-Future<List<Expense>> waitForList(
-  ProviderContainer container,
-  bool Function(List<Expense> expenses) condition,
-) {
-  final completer = Completer<List<Expense>>();
-  final subscription = container.listen(expenseListProvider, (_, next) {
-    final expenses = next.value;
-    if (expenses != null && condition(expenses) && !completer.isCompleted) {
-      completer.complete(expenses);
-    }
-  }, fireImmediately: true);
-  return completer.future
-      .timeout(const Duration(seconds: 5))
-      .whenComplete(subscription.close);
-}
+import '../../../../helpers/wait_for.dart';
 
 /// A repository whose stream always fails, to test the error state.
 class FailingExpenseRepository implements ExpenseRepository {
@@ -58,7 +39,7 @@ void main() {
     final container = createInMemoryContainer();
 
     expect(container.read(expenseListProvider).isLoading, isTrue);
-    expect(await waitForList(container, (_) => true), isEmpty);
+    expect(await waitFor(container, expenseListProvider, (_) => true), isEmpty);
   });
 
   test('add makes the expense appear with every field', () async {
@@ -74,7 +55,11 @@ void main() {
           note: 'Morning coffee',
         );
 
-    final expenses = await waitForList(container, (e) => e.length == 1);
+    final expenses = await waitFor(
+      container,
+      expenseListProvider,
+      (e) => e.length == 1,
+    );
     final saved = expenses.single;
     // createdAt comes from the real clock, so it is not checked here.
     expect(saved.title, 'Coffee');
@@ -94,11 +79,18 @@ void main() {
       category: ExpenseCategory.food,
       date: DateTime(2026, 9, 1),
     );
-    final added = await waitForList(container, (e) => e.length == 1);
+    final added = await waitFor(
+      container,
+      expenseListProvider,
+      (e) => e.length == 1,
+    );
 
     await notifier.delete(added.single.id);
 
-    expect(await waitForList(container, (e) => e.isEmpty), isEmpty);
+    expect(
+      await waitFor(container, expenseListProvider, (e) => e.isEmpty),
+      isEmpty,
+    );
   });
 
   test('shows only the selected month, and follows a month change', () async {
@@ -119,16 +111,18 @@ void main() {
     }
 
     // On the clock's month: only the September expense.
-    final september = await waitForList(
+    final september = await waitFor(
       container,
+      expenseListProvider,
       (e) => e.isNotEmpty && e.every((x) => x.title == 'September'),
     );
     expect(september.map((e) => e.title), ['September']);
 
     container.read(selectedMonthProvider.notifier).previous();
 
-    final august = await waitForList(
+    final august = await waitFor(
       container,
+      expenseListProvider,
       (e) => e.isNotEmpty && e.every((x) => x.title == 'August'),
     );
     expect(august.map((e) => e.title), ['August']);
@@ -150,7 +144,11 @@ void main() {
         );
 
     expect(container.read(selectedMonthProvider), const CalendarMonth(2026, 8));
-    final expenses = await waitForList(container, (e) => e.isNotEmpty);
+    final expenses = await waitFor(
+      container,
+      expenseListProvider,
+      (e) => e.isNotEmpty,
+    );
     expect(expenses.single.title, 'Rent');
   });
 

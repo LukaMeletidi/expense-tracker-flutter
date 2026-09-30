@@ -1,5 +1,6 @@
 import 'package:expense_tracker/features/expenses/presentation/screens/add_expense_screen.dart';
 import 'package:expense_tracker/features/expenses/presentation/screens/expense_list_screen.dart';
+import 'package:expense_tracker/features/expenses/presentation/screens/statistics_screen.dart';
 import 'package:go_router/go_router.dart';
 
 /// Builds the app's route table.
@@ -26,6 +27,12 @@ GoRouter createAppRouter() => GoRouter(
           path: 'add',
           name: 'addExpense',
           builder: (context, state) => const AddExpenseScreen(),
+        ),
+        // '/stats', also on top of the list, for the same reason.
+        GoRoute(
+          path: 'stats',
+          name: 'statistics',
+          builder: (context, state) => const StatisticsScreen(),
         ),
       ],
     ),

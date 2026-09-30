@@ -24,7 +24,16 @@ class ExpenseListScreen extends ConsumerWidget {
     ).formatMonthYear(ref.watch(selectedMonthProvider).firstDay);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Expenses')),
+      appBar: AppBar(
+        title: const Text('Expenses'),
+        actions: [
+          IconButton(
+            onPressed: () => context.push('/stats'),
+            tooltip: 'Statistics',
+            icon: const Icon(Icons.bar_chart),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           // Outside the states below, so the month can be changed even while

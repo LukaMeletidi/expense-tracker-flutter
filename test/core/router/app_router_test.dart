@@ -45,4 +45,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Expenses'), findsOneWidget);
   });
+
+  testWidgets('the chart button opens statistics, and back returns', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await tester.tap(find.byTooltip('Statistics'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, 'Statistics'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(find.text('Expenses'), findsOneWidget);
+  });
 }

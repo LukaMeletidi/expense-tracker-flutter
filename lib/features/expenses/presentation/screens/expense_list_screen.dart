@@ -5,6 +5,7 @@ import 'package:expense_tracker/features/expenses/presentation/providers/expense
 import 'package:expense_tracker/features/expenses/presentation/providers/export_provider.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/month_summary_provider.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/selected_month_provider.dart';
+import 'package:expense_tracker/features/expenses/presentation/widgets/expense_details_sheet.dart';
 import 'package:expense_tracker/features/expenses/presentation/widgets/month_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -234,6 +235,7 @@ class _ExpenseList extends ConsumerWidget {
           // delete can return false and the row slides back into place.
           confirmDismiss: (_) => _delete(context, ref, expense),
           child: ListTile(
+            onTap: () => showExpenseDetails(context, expense),
             title: Text(expense.title),
             subtitle: Text(
               '${expense.category.label} · '

@@ -271,6 +271,82 @@ void main() {
     });
   });
 
+  group('details sheet', () {
+    final lunch = Expense(
+      id: 4,
+      title: 'Lunch',
+      amountCents: 1800,
+      category: ExpenseCategory.food,
+      date: DateTime(2026, 9, 3),
+      createdAt: DateTime(2026, 9, 3, 13, 0),
+      note: 'With the team\nPaid by card',
+    );
+
+    testWidgets('tapping a row shows that expense, with its note', (
+      tester,
+    ) async {
+      await pumpListScreen(
+        tester,
+        FakeExpenseRepository(expenses: [lunch, bus]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Lunch'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Thursday, September 3, 2026'), findsOneWidget);
+      expect(find.text('With the team\nPaid by card'), findsOneWidget);
+    });
+
+    testWidgets('shows the tapped expense, not another one', (tester) async {
+      await pumpListScreen(
+        tester,
+        FakeExpenseRepository(expenses: [lunch, bus]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Bus'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Wednesday, September 2, 2026'), findsOneWidget);
+      expect(find.text('No note'), findsOneWidget);
+      expect(find.text('With the team\nPaid by card'), findsNothing);
+    });
+
+    testWidgets('closes when swiped down', (tester) async {
+      await pumpListScreen(tester, FakeExpenseRepository(expenses: [lunch]));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Lunch'));
+      await tester.pumpAndSettle();
+      expect(find.text('Note'), findsOneWidget);
+
+      await tester.drag(find.text('Note'), const Offset(0, 600));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Note'), findsNothing);
+    });
+
+    testWidgets('a very long note fits in the sheet without errors', (
+      tester,
+    ) async {
+      final longNote = [
+        for (var line = 1; line <= 80; line++) 'Line $line of a long note',
+      ].join('\n');
+      await pumpListScreen(
+        tester,
+        FakeExpenseRepository(expenses: [lunch.copyWith(note: longNote)]),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Lunch'));
+      await tester.pumpAndSettle();
+
+      // A layout overflow would be reported here as an exception.
+      expect(tester.takeException(), isNull);
+      expect(find.text(longNote), findsOneWidget);
+    });
+  });
+
   group('export button', () {
     Finder exportButton() => find.byTooltip('Export month');
 

@@ -1,3 +1,4 @@
+import 'package:expense_tracker/core/clock/clock_provider.dart';
 import 'package:expense_tracker/features/expenses/data/expense_repository_provider.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
 import 'package:expense_tracker/features/expenses/presentation/screens/expense_list_screen.dart';
@@ -21,9 +22,13 @@ final bus = Expense(
   title: 'Bus',
   amountCents: 100,
   category: ExpenseCategory.transport,
-  date: DateTime(2026, 8, 31),
-  createdAt: DateTime(2026, 8, 31, 9, 0),
+  date: DateTime(2026, 9, 2),
+  createdAt: DateTime(2026, 9, 2, 9, 0),
 );
+
+/// "Now" for every test here, so the list always shows September 2026,
+/// whatever the real date is.
+final testNow = DateTime(2026, 9, 29, 12, 0);
 
 /// Shows the list screen with [repository] behind expenseListProvider.
 Future<void> pumpListScreen(
@@ -32,7 +37,10 @@ Future<void> pumpListScreen(
 ) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [expenseRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        expenseRepositoryProvider.overrideWithValue(repository),
+        clockProvider.overrideWithValue(() => testNow),
+      ],
       // Riverpod 3 retries failed providers on a timer; the error tests
       // need the error to stay put, and no timer left running.
       retry: (_, _) => null,
@@ -91,7 +99,7 @@ void main() {
     expect(find.text('Food · Sep 1, 2026'), findsOneWidget);
     expect(find.text('₾4.50'), findsOneWidget);
     expect(find.text('Bus'), findsOneWidget);
-    expect(find.text('Transport · Aug 31, 2026'), findsOneWidget);
+    expect(find.text('Transport · Sep 2, 2026'), findsOneWidget);
     expect(find.text('₾1.00'), findsOneWidget);
   });
 

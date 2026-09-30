@@ -44,6 +44,8 @@ dependencies:
   drift_flutter: ^0.3.1
   # Declarative, URL-style navigation between screens.
   go_router: ^18.0.1
+  # Opens the phone's share sheet, used to export a month as a CSV file.
+  share_plus: ^13.3.0
 
 dev_dependencies:
   flutter_test:

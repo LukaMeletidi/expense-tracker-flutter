@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:expense_tracker/core/clock/clock_provider.dart';
+import 'package:expense_tracker/core/sharing/file_sharer.dart';
 import 'package:expense_tracker/features/expenses/data/expense_repository_provider.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
 import 'package:expense_tracker/features/expenses/presentation/screens/expense_list_screen.dart';
@@ -7,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../../../helpers/fake_expense_repository.dart';
+import '../../../../helpers/fake_file_sharer.dart';
 
 final coffee = Expense(
   id: 1,
@@ -31,15 +35,20 @@ final bus = Expense(
 final testNow = DateTime(2026, 9, 29, 12, 0);
 
 /// Shows the list screen with [repository] behind expenseListProvider.
+///
+/// Sharing always goes to a fake, [sharer] if given: the real share_plus
+/// plugin cannot run inside a test.
 Future<void> pumpListScreen(
   WidgetTester tester,
-  FakeExpenseRepository repository,
-) async {
+  FakeExpenseRepository repository, {
+  FakeFileSharer? sharer,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         expenseRepositoryProvider.overrideWithValue(repository),
         clockProvider.overrideWithValue(() => testNow),
+        fileSharerProvider.overrideWithValue(sharer ?? FakeFileSharer()),
       ],
       // Riverpod 3 retries failed providers on a timer; the error tests
       // need the error to stay put, and no timer left running.
@@ -259,6 +268,91 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Total'), findsNothing);
+    });
+  });
+
+  group('export button', () {
+    Finder exportButton() => find.byTooltip('Export month');
+
+    testWidgets("shares the month's expenses as a CSV file", (tester) async {
+      final sharer = FakeFileSharer();
+      await pumpListScreen(
+        tester,
+        FakeExpenseRepository(expenses: [coffee, bus]),
+        sharer: sharer,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(exportButton());
+      await tester.pumpAndSettle();
+
+      final file = sharer.shared.single;
+      expect(file.fileName, 'expenses-2026-09.csv');
+      expect(file.mimeType, 'text/csv');
+      expect(file.contents, contains(',Coffee,'));
+      expect(file.contents, contains(',Bus,'));
+      // The iPad share sheet gets the whole button's area to point at.
+      expect(
+        file.origin,
+        tester.getRect(find.widgetWithIcon(IconButton, Icons.share)),
+      );
+    });
+
+    testWidgets('an empty month shows a message and shares nothing', (
+      tester,
+    ) async {
+      final sharer = FakeFileSharer();
+      await pumpListScreen(tester, FakeExpenseRepository(), sharer: sharer);
+      await tester.pumpAndSettle();
+
+      await tester.tap(exportButton());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('No expenses in September 2026 to export.'),
+        findsOneWidget,
+      );
+      expect(sharer.shared, isEmpty);
+    });
+
+    testWidgets('a failed export shows a message', (tester) async {
+      final sharer = FakeFileSharer()..error = Exception('disk full');
+      await pumpListScreen(
+        tester,
+        FakeExpenseRepository(expenses: [coffee]),
+        sharer: sharer,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(exportButton());
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't export the expenses."), findsOneWidget);
+    });
+
+    testWidgets('is disabled while an export is running', (tester) async {
+      final gate = Completer<void>();
+      final sharer = FakeFileSharer()..gate = gate;
+      await pumpListScreen(
+        tester,
+        FakeExpenseRepository(expenses: [coffee]),
+        sharer: sharer,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(exportButton());
+      await tester.pump();
+
+      IconButton button() => tester.widget<IconButton>(
+        find.widgetWithIcon(IconButton, Icons.share),
+      );
+      expect(button().onPressed, isNull);
+
+      gate.complete();
+      await tester.pumpAndSettle();
+
+      expect(button().onPressed, isNotNull);
+      expect(sharer.shared, hasLength(1));
     });
   });
 }

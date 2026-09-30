@@ -2,6 +2,7 @@ import 'package:expense_tracker/core/formatting/money.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
 import 'package:expense_tracker/features/expenses/presentation/expense_category_label.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/expense_list_provider.dart';
+import 'package:expense_tracker/features/expenses/presentation/providers/export_provider.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/month_summary_provider.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/selected_month_provider.dart';
 import 'package:expense_tracker/features/expenses/presentation/widgets/month_bar.dart';
@@ -29,6 +30,7 @@ class ExpenseListScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Expenses'),
         actions: [
+          const _ExportButton(),
           IconButton(
             onPressed: () => context.push('/stats'),
             tooltip: 'Statistics',
@@ -70,6 +72,64 @@ class ExpenseListScreen extends ConsumerWidget {
         tooltip: 'Add expense',
         child: const Icon(Icons.add),
       ),
+    );
+  }
+}
+
+/// Shares the selected month as a CSV file.
+///
+/// A StatefulWidget because it remembers whether an export is running, so
+/// the button is disabled meanwhile and a double tap cannot open two share
+/// sheets. The export itself happens in [expenseExporterProvider].
+class _ExportButton extends ConsumerStatefulWidget {
+  const _ExportButton();
+
+  @override
+  ConsumerState<_ExportButton> createState() => _ExportButtonState();
+}
+
+class _ExportButtonState extends ConsumerState<_ExportButton> {
+  bool _isExporting = false;
+
+  Future<void> _export() async {
+    final month = ref.read(selectedMonthProvider);
+    final monthName = MaterialLocalizations.of(
+      context,
+    ).formatMonthYear(month.firstDay);
+    // Taken before the await: after it, this widget could be gone.
+    final messenger = ScaffoldMessenger.of(context);
+    // The button's position on screen, for the iPad share sheet to point at.
+    final box = context.findRenderObject() as RenderBox?;
+    final origin = box == null
+        ? null
+        : box.localToGlobal(Offset.zero) & box.size;
+
+    setState(() => _isExporting = true);
+    try {
+      final result = await ref
+          .read(expenseExporterProvider)
+          .exportMonth(month, origin: origin);
+      if (result == ExportResult.nothingToExport) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('No expenses in $monthName to export.')),
+        );
+      }
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Couldn't export the expenses.")),
+      );
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      // null disables the button while an export is running.
+      onPressed: _isExporting ? null : _export,
+      tooltip: 'Export month',
+      icon: const Icon(Icons.share),
     );
   }
 }

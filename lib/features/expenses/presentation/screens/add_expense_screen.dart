@@ -1,3 +1,4 @@
+import 'package:expense_tracker/core/clock/clock_provider.dart';
 import 'package:expense_tracker/core/formatting/money.dart';
 import 'package:expense_tracker/features/expenses/domain/date_only.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
@@ -27,8 +28,18 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   ExpenseCategory _category = ExpenseCategory.other;
-  DateTime _date = dateOnly(DateTime.now());
+  late DateTime _date;
   bool _isSaving = false;
+
+  /// Today, from clockProvider so tests can pin it.
+  DateTime get _today => dateOnly(ref.read(clockProvider)());
+
+  @override
+  void initState() {
+    super.initState();
+    // A field initializer cannot use ref, so the default date is set here.
+    _date = _today;
+  }
 
   @override
   void dispose() {
@@ -44,7 +55,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       context: context,
       initialDate: _date,
       firstDate: DateTime(2000),
-      lastDate: dateOnly(DateTime.now()),
+      lastDate: _today,
     );
     if (picked != null) setState(() => _date = picked);
   }

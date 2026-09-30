@@ -15,7 +15,7 @@ without an internet connection.
 ## Features
 
 - Add an expense with a title, amount, category, date and an optional note
-- See all expenses, newest day first
+- Browse expenses one month at a time, newest day first
 - Swipe an expense away to delete it
 - Data is saved in a local SQLite database and survives app restarts
 - Form validation (required title, amount must be a valid number above 0)
@@ -38,11 +38,14 @@ The code is organised by feature, and each feature is split into three layers:
 ```
 lib/
 ├── core/                       shared by the whole app
+│   ├── clock/                  clockProvider ("now", replaceable in tests)
 │   ├── database/               AppDatabase and its provider
 │   ├── formatting/             formatCents / parseCents
-│   └── router/                 go_router setup
+│   ├── router/                 go_router setup
+│   └── theme/                  light and dark themes
 └── features/expenses/
-    ├── domain/                 Expense, ExpenseRepository interface, dateOnly
+    ├── domain/                 Expense, CalendarMonth, ExpenseRepository
+    │                           interface, dateOnly
     │                           (pure Dart: no Flutter, no Drift)
     ├── data/                   Drift table, DriftExpenseRepository
     └── presentation/           screens, providers, form rules
@@ -66,7 +69,8 @@ flowchart LR
 - **The expense date is stored as text, like `'2026-09-01'`.** It is a
   calendar day, not a moment in time. A timestamp could move to a different
   day when the user changes time zone; the text means the same day everywhere,
-  and it still sorts correctly.
+  and it still sorts correctly. It also makes a month a simple text range
+  (`'2026-09-01'` up to, but not including, `'2026-10-01'`).
 - **Categories are stored by name (`'food'`), not by position.** Reordering
   the enum can then never silently change existing rows.
 - **The repository is typed as an interface.** Nothing outside the data layer
@@ -80,20 +84,24 @@ flowchart LR
 
 ## Testing
 
-97 tests, grouped by layer:
+129 tests, grouped by layer:
 
 | Layer | Tests | How |
 |---|---|---|
-| Domain and formatting | 48 | Plain unit tests (entity equality, `copyWith`, `dateOnly`, money parsing and formatting) |
-| Data | 13 | The real Drift repository against an in-memory SQLite database |
-| Providers | 4 | A Riverpod `ProviderContainer` with the in-memory database |
+| Domain and formatting | 63 | Plain unit tests (entity equality, `copyWith`, `dateOnly`, `CalendarMonth`, money parsing and formatting) |
+| Data | 17 | The real Drift repository against an in-memory SQLite database |
+| Providers | 13 | A Riverpod `ProviderContainer`, with the in-memory database for the expense list |
 | Form rules, labels and theme | 15 | Plain unit tests |
-| Widgets | 17 | Screens, navigation and light/dark theme, with a fake repository |
+| Widgets | 21 | Screens, month navigation, and light/dark theme, with a fake repository |
 
 Widget tests use a fake repository rather than SQLite: they run on a fake
 clock, where Drift's stream timers can cause "Timer still pending" failures.
 The fake also lets each test put the screen into a chosen state (loading,
 error, empty or data).
+
+Code reads the current time through `clockProvider` instead of calling
+`DateTime.now()`, and tests pin it to a fixed date, so no test depends on
+today's real date.
 
 ## Getting started
 

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:expense_tracker/features/expenses/data/expense_repository_provider.dart';
+import 'package:expense_tracker/features/expenses/domain/calendar_month.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/selected_month_provider.dart';
 
@@ -15,14 +16,16 @@ class ExpenseListNotifier extends StreamNotifier<List<Expense>> {
     return ref.watch(expenseRepositoryProvider).watchMonth(month);
   }
 
+  /// After saving, shows the month of the new expense, so an expense dated
+  /// in another month does not seem to vanish from the list.
   Future<void> add({
     required String title,
     required int amountCents,
     required ExpenseCategory category,
     required DateTime date,
     String? note,
-  }) {
-    return ref
+  }) async {
+    await ref
         .read(expenseRepositoryProvider)
         .add(
           title: title,
@@ -31,6 +34,10 @@ class ExpenseListNotifier extends StreamNotifier<List<Expense>> {
           date: date,
           note: note,
         );
+    // After an await this provider may have been disposed; ref must not be
+    // used then.
+    if (!ref.mounted) return;
+    ref.read(selectedMonthProvider.notifier).select(CalendarMonth.of(date));
   }
 
   Future<void> delete(int id) {

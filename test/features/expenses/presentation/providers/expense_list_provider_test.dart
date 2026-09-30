@@ -127,9 +127,11 @@ void main() {
   test('shows only the selected month, and follows a month change', () async {
     final container = createContainer();
     final notifier = container.read(expenseListProvider.notifier);
+    // August first: adding switches to the new expense's month, so the
+    // September expense, added last, leaves September selected.
     for (final (title, date) in [
-      ('September', DateTime(2026, 9, 1)),
       ('August', DateTime(2026, 8, 31)),
+      ('September', DateTime(2026, 9, 1)),
     ]) {
       await notifier.add(
         title: title,
@@ -139,7 +141,7 @@ void main() {
       );
     }
 
-    // Starts on the clock's month: only the September expense.
+    // On the clock's month: only the September expense.
     final september = await waitForList(
       container,
       (e) => e.isNotEmpty && e.every((x) => x.title == 'September'),
@@ -153,6 +155,26 @@ void main() {
       (e) => e.isNotEmpty && e.every((x) => x.title == 'August'),
     );
     expect(august.map((e) => e.title), ['August']);
+  });
+
+  test('adding an expense in another month switches to that month', () async {
+    final container = createContainer();
+    // Listen, so the list provider stays active the way it does on screen.
+    container.listen(expenseListProvider, (_, _) {});
+    expect(container.read(selectedMonthProvider), const CalendarMonth(2026, 9));
+
+    await container
+        .read(expenseListProvider.notifier)
+        .add(
+          title: 'Rent',
+          amountCents: 50000,
+          category: ExpenseCategory.bills,
+          date: DateTime(2026, 8, 1),
+        );
+
+    expect(container.read(selectedMonthProvider), const CalendarMonth(2026, 8));
+    final expenses = await waitForList(container, (e) => e.isNotEmpty);
+    expect(expenses.single.title, 'Rent');
   });
 
   test('a failing repository puts the list into the error state', () async {

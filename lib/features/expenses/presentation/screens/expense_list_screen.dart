@@ -2,14 +2,15 @@ import 'package:expense_tracker/core/formatting/money.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
 import 'package:expense_tracker/features/expenses/presentation/expense_category_label.dart';
 import 'package:expense_tracker/features/expenses/presentation/providers/expense_list_provider.dart';
+import 'package:expense_tracker/features/expenses/presentation/providers/selected_month_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// The app's home screen: the list of expenses.
+/// The app's home screen: the expenses of one month at a time.
 ///
-/// It only reads [expenseListProvider] and calls its notifier; all data
-/// logic lives in the provider and the repository.
+/// It only reads [expenseListProvider] and [selectedMonthProvider] and calls
+/// their notifiers; all data logic lives in the providers and the repository.
 class ExpenseListScreen extends ConsumerWidget {
   const ExpenseListScreen({super.key});
 
@@ -17,18 +18,33 @@ class ExpenseListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // watch (not read) so the screen rebuilds whenever a new list arrives.
     final expenses = ref.watch(expenseListProvider);
+    final monthName = MaterialLocalizations.of(
+      context,
+    ).formatMonthYear(ref.watch(selectedMonthProvider).firstDay);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Expenses')),
-      // when() makes us handle every state; forgetting one will not compile.
-      body: expenses.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => _ErrorView(
-          // invalidate throws the current state away and runs build() again.
-          onRetry: () => ref.invalidate(expenseListProvider),
-        ),
-        data: (items) =>
-            items.isEmpty ? const _EmptyView() : _ExpenseList(expenses: items),
+      body: Column(
+        children: [
+          // Outside the states below, so the month can be changed even while
+          // loading or after an error.
+          _MonthBar(monthName: monthName),
+          Expanded(
+            // when() makes us handle every state; forgetting one will not
+            // compile.
+            child: expenses.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stackTrace) => _ErrorView(
+                // invalidate throws the current state away and runs build()
+                // again.
+                onRetry: () => ref.invalidate(expenseListProvider),
+              ),
+              data: (items) => items.isEmpty
+                  ? _EmptyView(monthName: monthName)
+                  : _ExpenseList(expenses: items),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         // go() swaps the current screen; push() stacks a new one on top so the
@@ -41,16 +57,59 @@ class ExpenseListScreen extends ConsumerWidget {
   }
 }
 
+/// ◀ September 2026 ▶: moves the list one month back or forward.
+class _MonthBar extends ConsumerWidget {
+  const _MonthBar({required this.monthName});
+
+  final String monthName;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watching the month makes this rebuild on every change, so canGoNext
+    // is read again each time the month moves.
+    ref.watch(selectedMonthProvider);
+    final notifier = ref.read(selectedMonthProvider.notifier);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: notifier.previous,
+            tooltip: 'Show previous month',
+            icon: const Icon(Icons.chevron_left),
+          ),
+          Expanded(
+            child: Text(
+              monthName,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          IconButton(
+            // null disables the button: there is no month after the current one.
+            onPressed: notifier.canGoNext ? notifier.next : null,
+            tooltip: 'Show next month',
+            icon: const Icon(Icons.chevron_right),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _EmptyView extends StatelessWidget {
-  const _EmptyView();
+  const _EmptyView({required this.monthName});
+
+  final String monthName;
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Text(
-          'No expenses yet.\nTap + to add your first one.',
+          'No expenses in $monthName.\nTap + to add one.',
           textAlign: TextAlign.center,
         ),
       ),

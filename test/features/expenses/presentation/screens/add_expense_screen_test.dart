@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:expense_tracker/core/clock/clock_provider.dart';
 import 'package:expense_tracker/core/router/app_router.dart';
 import 'package:expense_tracker/features/expenses/data/expense_repository_provider.dart';
-import 'package:expense_tracker/features/expenses/domain/date_only.dart';
 import 'package:expense_tracker/features/expenses/domain/expense.dart';
 import 'package:expense_tracker/main.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +19,11 @@ Future<void> openAddScreen(
 ) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [expenseRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        expenseRepositoryProvider.overrideWithValue(repository),
+        // "Now" is 29 September 2026, whatever the real date is.
+        clockProvider.overrideWithValue(() => DateTime(2026, 9, 29, 12, 0)),
+      ],
       retry: (_, _) => null,
       child: ExpenseTrackerApp(router: createAppRouter()),
     ),
@@ -89,7 +93,8 @@ void main() {
     expect(saved.title, 'Coffee');
     expect(saved.amountCents, 450);
     expect(saved.category, ExpenseCategory.food);
-    expect(saved.date, dateOnly(DateTime.now()));
+    // The default date is today, as given by the pinned clock.
+    expect(saved.date, DateTime(2026, 9, 29));
     expect(saved.note, 'Morning coffee');
 
     // Back on the list, which already shows the new expense.
@@ -114,9 +119,6 @@ void main() {
   testWidgets('the picked date is saved', (tester) async {
     final repository = FakeExpenseRepository();
     await openAddScreen(tester, repository);
-    final now = DateTime.now();
-    // The 1st of this month is always allowed: it is never in the future.
-    final firstOfMonth = DateTime(now.year, now.month, 1);
 
     await tester.tap(find.text('Date'));
     await tester.pumpAndSettle();
@@ -128,7 +130,32 @@ void main() {
     await tapSave(tester);
     await tester.pumpAndSettle();
 
-    expect(repository.expenses.single.date, firstOfMonth);
+    expect(repository.expenses.single.date, DateTime(2026, 9, 1));
+  });
+
+  testWidgets('saving an expense from last month shows that month', (
+    tester,
+  ) async {
+    final repository = FakeExpenseRepository();
+    await openAddScreen(tester, repository);
+
+    // In the date picker: back to August, then the 31st.
+    await tester.tap(find.text('Date'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Previous month'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('31'));
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    await enterField(tester, 'Title', 'Rent');
+    await enterField(tester, 'Amount', '500');
+    await tapSave(tester);
+    await tester.pumpAndSettle();
+
+    expect(repository.expenses.single.date, DateTime(2026, 8, 31));
+    // Back on the list, which switched to August to show the new expense.
+    expect(find.text('August 2026'), findsOneWidget);
+    expect(find.text('Rent'), findsOneWidget);
   });
 
   testWidgets('a failed save shows a message and stays on the form', (

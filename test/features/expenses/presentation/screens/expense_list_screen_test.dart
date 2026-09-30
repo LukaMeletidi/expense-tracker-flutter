@@ -74,7 +74,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text("Couldn't load expenses."), findsNothing);
-    expect(find.textContaining('No expenses yet.'), findsOneWidget);
+    expect(
+      find.textContaining('No expenses in September 2026.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows the empty state when there are no expenses', (
@@ -83,7 +86,10 @@ void main() {
     await pumpListScreen(tester, FakeExpenseRepository());
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('No expenses yet.'), findsOneWidget);
+    expect(
+      find.textContaining('No expenses in September 2026.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows each expense with category, date and amount', (
@@ -129,5 +135,68 @@ void main() {
 
     expect(find.text("Couldn't delete the expense."), findsOneWidget);
     expect(find.text('Coffee'), findsOneWidget);
+  });
+
+  group('month bar', () {
+    final rent = Expense(
+      id: 3,
+      title: 'Rent',
+      amountCents: 50000,
+      category: ExpenseCategory.bills,
+      date: DateTime(2026, 8, 15),
+      createdAt: DateTime(2026, 8, 15, 9, 0),
+    );
+
+    IconButton nextButton(WidgetTester tester) => tester.widget<IconButton>(
+      find.widgetWithIcon(IconButton, Icons.chevron_right),
+    );
+
+    testWidgets('shows the current month, with next disabled', (tester) async {
+      await pumpListScreen(tester, FakeExpenseRepository());
+      await tester.pumpAndSettle();
+
+      expect(find.text('September 2026'), findsOneWidget);
+      expect(nextButton(tester).onPressed, isNull);
+    });
+
+    testWidgets('previous shows that month, and next comes back', (
+      tester,
+    ) async {
+      await pumpListScreen(
+        tester,
+        FakeExpenseRepository(expenses: [coffee, rent]),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Coffee'), findsOneWidget);
+      expect(find.text('Rent'), findsNothing);
+
+      await tester.tap(find.byTooltip('Show previous month'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('August 2026'), findsOneWidget);
+      expect(find.text('Rent'), findsOneWidget);
+      expect(find.text('Coffee'), findsNothing);
+      expect(nextButton(tester).onPressed, isNotNull);
+
+      await tester.tap(find.byTooltip('Show next month'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('September 2026'), findsOneWidget);
+      expect(find.text('Coffee'), findsOneWidget);
+      expect(find.text('Rent'), findsNothing);
+    });
+
+    testWidgets('an empty month says which month is empty', (tester) async {
+      await pumpListScreen(tester, FakeExpenseRepository(expenses: [coffee]));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Show previous month'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('No expenses in August 2026.'),
+        findsOneWidget,
+      );
+    });
   });
 }

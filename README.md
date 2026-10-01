@@ -2,9 +2,13 @@
 
 [![CI](https://github.com/LukaMeletidi/expense-tracker-flutter/actions/workflows/ci.yml/badge.svg)](https://github.com/LukaMeletidi/expense-tracker-flutter/actions/workflows/ci.yml)
 
-An offline-first expense tracker for Android and iOS, built with Flutter,
-Riverpod and Drift. Every expense is stored on the device, so the app works
-without an internet connection.
+An offline-first expense tracker built with Flutter, Riverpod and Drift.
+Every expense is stored on the device, so the app works without an internet
+connection. Tested on Android; the iOS project shares the same code but has
+not been run on an iPhone yet.
+
+**192 automated tests** (unit, database and widget) · **95% line coverage**
+of the hand-written code · run by CI on every push
 
 <p>
   <img src="docs/screenshots/list.png" alt="Expense list in dark mode, with the month bar and the month's total" width="250">
@@ -44,7 +48,7 @@ expense's details, opened by tapping its row:
 
 | Package | Used for |
 |---|---|
-| [Flutter](https://flutter.dev) | UI for Android and iOS from one codebase |
+| [Flutter](https://flutter.dev) | UI for Android and iOS from one codebase (tested on Android) |
 | [Riverpod](https://riverpod.dev) | State management; keeps logic out of widgets and makes it easy to swap dependencies in tests |
 | [go_router](https://pub.dev/packages/go_router) | Navigation by path (`/`, `/add`, `/stats`) instead of pushing widgets by hand |
 | [Drift](https://drift.simonbinder.eu) | Type-safe SQLite; queries return a `Stream` that emits again whenever the table changes |
@@ -136,10 +140,16 @@ Code reads the current time through `clockProvider` instead of calling
 `DateTime.now()`, and tests pin it to a fixed date, so no test depends on
 today's real date.
 
+**Coverage:** 95% of the hand-written lines (476 of 499), measured with
+`flutter test --coverage`. Drift's generated `app_database.g.dart` is left
+out of that number. The uncovered lines are mostly ones that tests replace
+on purpose: opening the real database file, the real share sheet, and
+`main()`. Including the generated code, coverage is 71%.
+
 ## Getting started
 
 Requirements: Flutter 3.44 or newer (Dart 3.12), and an Android emulator or
-iOS simulator.
+phone. (An iOS simulator should work too, but iOS has not been tested.)
 
 ```sh
 git clone https://github.com/LukaMeletidi/expense-tracker-flutter.git

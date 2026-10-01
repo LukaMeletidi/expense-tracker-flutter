@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.expense_tracker"
+    namespace = "dev.lukameletidi.expensetracker"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,8 +15,9 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.expense_tracker"
+        // The app's unique id on a phone (and on Google Play). Changing it
+        // makes phones treat the app as a different one, with its own data.
+        applicationId = "dev.lukameletidi.expensetracker"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -27,8 +28,9 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Signed with the debug key: fine for installing the APK directly
+            // (sideloading). Publishing on Google Play would need a release
+            // key of its own, kept out of git (key.properties is ignored).
             signingConfig = signingConfigs.getByName("debug")
         }
     }

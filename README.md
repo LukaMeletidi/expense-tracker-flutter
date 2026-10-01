@@ -7,8 +7,17 @@ Every expense is stored on the device, so the app works without an internet
 connection. Tested on Android; the iOS project shares the same code but has
 not been run on an iPhone yet.
 
-**192 automated tests** (unit, database and widget) · **95% line coverage**
+**194 automated tests** (unit, database and widget) · **95% line coverage**
 of the hand-written code · run by CI on every push
+
+**[Download the Android APK](https://github.com/LukaMeletidi/expense-tracker-flutter/releases/latest)**
+to try it on a phone (see [Installing the APK](#installing-the-apk)), or
+build it yourself (see [Getting started](#getting-started)).
+
+<img src="docs/demo.gif" alt="Demo: adding an expense, opening its details with the full note, switching months, the Statistics screen, and swiping an expense away to delete it" width="300">
+
+A walk-through: add an expense, open an expense's details, switch months,
+check the statistics, and swipe an expense away.
 
 <p>
   <img src="docs/screenshots/list.png" alt="Expense list in dark mode, with the month bar and the month's total" width="250">
@@ -120,7 +129,7 @@ flowchart LR
 
 ## Testing
 
-192 tests, grouped by layer:
+194 tests, grouped by layer:
 
 | Layer | Tests | How |
 |---|---|---|
@@ -128,7 +137,7 @@ flowchart LR
 | Data | 17 | The real Drift repository against an in-memory SQLite database |
 | Providers | 21 | A Riverpod `ProviderContainer` with the in-memory database for the expense list and the month summary; the exporter with a fake repository and a fake sharer |
 | Form rules, labels, percentages, CSV format and theme | 41 | Plain unit tests |
-| Widgets | 43 | Screens, month navigation, statistics, the total line, the details sheet, the export button, and light/dark theme, with a fake repository |
+| Widgets | 45 | Screens, month navigation, statistics, the total line, the details sheet, the export button, and light/dark theme, with a fake repository |
 
 Widget tests use a fake repository rather than SQLite: they run on a fake
 clock, where Drift's stream timers can cause "Timer still pending" failures.
@@ -140,7 +149,7 @@ Code reads the current time through `clockProvider` instead of calling
 `DateTime.now()`, and tests pin it to a fixed date, so no test depends on
 today's real date.
 
-**Coverage:** 95% of the hand-written lines (476 of 499), measured with
+**Coverage:** 95% of the hand-written lines (479 of 502), measured with
 `flutter test --coverage`. Drift's generated `app_database.g.dart` is left
 out of that number. The uncovered lines are mostly ones that tests replace
 on purpose: opening the real database file, the real share sheet, and
@@ -175,6 +184,19 @@ straight after cloning. After changing a table, regenerate it with:
 ```sh
 dart run build_runner build
 ```
+
+### Installing the APK
+
+The APK on the [Releases page](https://github.com/LukaMeletidi/expense-tracker-flutter/releases/latest)
+is installed directly ("sideloaded"), not through Google Play:
+
+1. Download the `.apk` on your Android phone and tap it.
+2. When Android asks, allow installing apps from that source (your browser,
+   Files or Drive app) for this one install.
+3. Tap **Install**. Google Play Protect may warn that the app is from an
+   unknown developer; tap **More details → Install anyway**.
+
+The app asks for no permissions; it does not even have internet access.
 
 ## Future ideas
 

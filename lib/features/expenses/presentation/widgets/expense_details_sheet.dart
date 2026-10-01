@@ -15,7 +15,10 @@ Future<void> showExpenseDetails(BuildContext context, Expense expense) {
     // Lets a long note make the sheet taller than the default half screen,
     // up to the limit below; beyond that its content scrolls.
     isScrollControlled: true,
+    // These replace Flutter's default sheet constraints, so its 640 width
+    // limit (for tablets and wide screens) is repeated here.
     constraints: BoxConstraints(
+      maxWidth: 640,
       maxHeight: MediaQuery.sizeOf(context).height * 0.9,
     ),
     builder: (context) => ExpenseDetails(expense: expense),
@@ -39,37 +42,45 @@ class ExpenseDetails extends StatelessWidget {
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(expense.title, style: textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text(formatCents(expense.amountCents), style: textTheme.titleLarge),
-            const SizedBox(height: 16),
-            Text(expense.category.label, style: textTheme.bodyLarge),
-            Text(
-              // e.g. "Tuesday, September 1, 2026": more detail than the
-              // list row's short date.
-              MaterialLocalizations.of(context).formatFullDate(expense.date),
-              style: textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 24),
-            Text('Note', style: textTheme.labelLarge),
-            const SizedBox(height: 4),
-            if (note == null)
+        // Takes all the width the sheet is given. Without it the sheet
+        // shrinks to fit its text, so a short note made it narrow.
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(expense.title, style: textTheme.headlineSmall),
+              const SizedBox(height: 8),
               Text(
-                'No note',
-                style: textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              )
-            else
-              // The whole note, with its line breaks: no maxLines and no
-              // "…". Selectable so it can be copied; SelectableText is
-              // always read-only.
-              SelectableText(note, style: textTheme.bodyLarge),
-          ],
+                formatCents(expense.amountCents),
+                style: textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              Text(expense.category.label, style: textTheme.bodyLarge),
+              Text(
+                // e.g. "Tuesday, September 1, 2026": more detail than the
+                // list row's short date.
+                MaterialLocalizations.of(context).formatFullDate(expense.date),
+                style: textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 24),
+              Text('Note', style: textTheme.labelLarge),
+              const SizedBox(height: 4),
+              if (note == null)
+                Text(
+                  'No note',
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                )
+              else
+                // The whole note, with its line breaks: no maxLines and no
+                // "…". Selectable so it can be copied; SelectableText is
+                // always read-only.
+                SelectableText(note, style: textTheme.bodyLarge),
+            ],
+          ),
         ),
       ),
     );

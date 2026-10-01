@@ -326,6 +326,56 @@ void main() {
       expect(find.text('Note'), findsNothing);
     });
 
+    /// Makes the test screen [width] logical pixels wide, like a real device.
+    void useScreenWidth(WidgetTester tester, double width) {
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+    }
+
+    /// The width of the sheet's visible surface. Not the BottomSheet widget
+    /// itself: Flutter wraps the surface in a full-width box, so measuring
+    /// the widget would report full width even when the sheet looks narrow.
+    double visibleSheetWidth(WidgetTester tester) {
+      final surface = find
+          .descendant(
+            of: find.byType(BottomSheet),
+            matching: find.byType(Material),
+          )
+          .first;
+      return tester.getSize(surface).width;
+    }
+
+    testWidgets('on a phone the sheet is full width, even with short text', (
+      tester,
+    ) async {
+      // 600, not a typical 400: the test font is wider than Android's, and
+      // this expense's text is ~510 wide in it. The screen must be wider than
+      // the text for a too-narrow sheet to show up here.
+      useScreenWidth(tester, 600);
+      // Bus has no note: the sheet's content is short.
+      await pumpListScreen(tester, FakeExpenseRepository(expenses: [bus]));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Bus'));
+      await tester.pumpAndSettle();
+
+      expect(visibleSheetWidth(tester), 600);
+    });
+
+    testWidgets('on a wide screen the sheet stops at 640, like Material', (
+      tester,
+    ) async {
+      useScreenWidth(tester, 1000);
+      await pumpListScreen(tester, FakeExpenseRepository(expenses: [bus]));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Bus'));
+      await tester.pumpAndSettle();
+
+      expect(visibleSheetWidth(tester), 640);
+    });
+
     testWidgets('a very long note fits in the sheet without errors', (
       tester,
     ) async {
